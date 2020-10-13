@@ -4,7 +4,7 @@
 # Download the script, do the tasks described in the comments
 # Test your script, run it on the production server, screenshot that
 # Send your script to your github repo, and submit the URL with screenshot on Blackboard
-echo "line 7"
+
 # Get the current hostname using the hostname command and save it in a variable
 currentHostname=$(hostname)
 # Tell the user what the current hostname is in a human friendly way
