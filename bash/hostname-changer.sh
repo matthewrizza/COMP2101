@@ -4,11 +4,11 @@
 # Download the script, do the tasks described in the comments
 # Test your script, run it on the production server, screenshot that
 # Send your script to your github repo, and submit the URL with screenshot on Blackboard
-
+echo "line 7"
 # Get the current hostname using the hostname command and save it in a variable
 currentHostname=$(hostname)
 # Tell the user what the current hostname is in a human friendly way
-#echo "Your current hostname is: $currentHostname"
+echo "Your current hostname is: $currentHostname"
 # Ask for the user's student number using the read command
 read -p "Please enter your student number: " studentNumber
 # Use that to save the desired hostname of pcNNNNNNNNNN in a variable, where NNNNNNNNN is the student number entered by the user
