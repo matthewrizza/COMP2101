@@ -20,12 +20,12 @@ bias=1
 # Tell the user we have started processing
 echo "Rolling..."
 # roll the dice and save the results
-die1=$(( RANDOM % $range + $bias))
-die2=$(( RANDOM % $range + $bias))
+die1=$(( RANDOM % range + bias))
+die2=$(( RANDOM % range + bias))
 
 # Saves the sum and the average to seperate variables
-sum=$(($die1 + $die2))
-average=$(($sum / 2))
+sum=$((die1 + die2))
+average=$((sum / 2))
 
 # display the results
 echo "Rolled $die1, $die2"
