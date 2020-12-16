@@ -1,7 +1,7 @@
 ﻿# Question 1: This function gets the system hardware description.
 # Finished.
 function Get-HWInfo {
-    Get-WmiObject win32_computersystem | Format-List
+    Get-WmiObject win32_computersystem | Format-List Name, Manufacturer, Model
 }
 
 
@@ -10,8 +10,8 @@ function Get-HWInfo {
 function Get-SysInfo {
     $os = Get-WmiObject win32_operatingsystem
     $sysInfo = foreach ($device in $os) {
-                    New-Object psobject -Property @{
-                        Name = $device.Name
+                    New-Object -TypeName psobject -Property @{
+                        Name = $device.Caption
                         Version = $device.Version
                 }
             }
@@ -23,7 +23,8 @@ function Get-SysInfo {
 # Finished.
 function Get-ProcessorInfo {
     Get-WmiObject win32_processor |
-        Select-Object MaxClockSpeed,
+        Select-Object Name,
+                      CurrentClockSpeed,
                       NumberOfCores,
                       @{
                       n="L1 Cache Size";
@@ -60,35 +61,48 @@ function Get-ProcessorInfo {
                     }
     Format-List MaxClockSpeed, NumberOfCores, "L1 Cache Size", "L2 Cache Size", "L3 Cache Size"
 }
-Get-ProcessorInfo
+
 
 # Question 4: This function shows a summary of the your RAM components.
-# Needs completing: Size & Bank Slot for each DIMM. Total RAM.
+# Finished.
 function Get-RAM {
     $ramComponents = Get-WmiObject win32_physicalmemory
     $ramInfo =  foreach ($ram in $ramComponents) {
-                    New-Object psobject -Property @{
+                    New-Object -TypeName psobject -Property @{
                         Vendor = $ram.Manufacturer 
                         Description = $ram.Description
-                        Size = $ram.Capacity
-                }
+                        "Size(Mb)" = $ram.Capacity/1mb
+                        Bank = $ram.BankLabel
+                        Slot = $ram.DeviceLocator
+                        "Total RAM(Mb)" = $ram.Capacity/1mb
+                }               
             }
-    $ramInfo | Format-List Vendor, Description, Size
+    $ramInfo | Format-Table Vendor, Description, "Size(Mb)", Bank, Slot, "Total RAM(Mb)"
 }
 
 
 # Question 5: This function gets a summary of the physical disk drives.
-# Needs completing: Everything.
+# Finished.
 function Get-Summary {
-    $diskdrives = Get-WmiObject win32_diskdrive
+    $diskdrives = Get-CimInstance CIM_diskdrive
     $summaryInfo = foreach ( $disk in $diskdrives) {
-                        $partitions = Get-WmiObject win32_diskpartition
+                        $partitions = $disk | Get-CimAssociatedInstance -ResultClassName CIM_diskpartition
                         foreach ( $partition in $partitions ) {
-                               $logicaldisks = Get-WmiObject win32_logicaldisk
+                               $logicaldisks = $partition | Get-CimAssociatedInstance -ResultClassName CIM_logicaldisk
                                foreach ( $logicaldisk in $logicaldisks ) {
+                                   New-Object -TypeName psobject -Property @{
+                                        Vendor = $disk.Manufacturer
+                                        Model = $disk.Model
+                                        "Physical Disk Size(GB)" = $disk.Size/1gb -as [int]
+                                        "Logical Disk Size(GB)" = $logicaldisk.Size/1gb -as [int]
+                                        "Free Space(GB)" = $logicaldisk.FreeSpace/1gb -as [int]
+                                        "Percentage Free(%)" = [math]::Round(($logicaldisk.FreeSpace / $logicaldisk.Size) * 100, 2)
+
+                               }
                             }
                     }
                 }
+    $summaryInfo | Format-Table Vendor,Model,"Physical Disk Size(GB)","Logical Disk Size(GB)","Free Space(GB)","Percentage Free(%)"
 }
 
 
@@ -106,8 +120,8 @@ function Get-IPConfig {
 function Get-VideoCard {
     $videoCards = Get-WmiObject win32_videocontroller
     $videoCardInfo = foreach ( $videoCard in $videoCards ) {
-                            New-Object psobject -Property @{
-                                Vendor = $videoCard.Name
+                            New-Object -TypeName psobject -Property @{
+                                Vendor = $videoCard.AdapterCompatibility
                                 Description = $videoCard.Description
                                 "Screen Resolution" = [string]$videoCard.CurrentHorizontalResolution + " x " + [string]$videoCard.CurrentVerticalResolution
                         }
@@ -115,3 +129,55 @@ function Get-VideoCard {
     $videoCardInfo | Format-List Vendor, Description, "Screen Resolution"           
 }
 
+Write-Output ""
+Write-Output "System Information Report"
+Write-Output "--------------------------"
+Write-Output "
+"
+
+Write-Output "System Hardware"
+Write-Output "----------------------"
+(Get-HWInfo | Out-String).Trim()
+Write-Output "
+
+"
+
+Write-Output "Operating System"
+Write-Output "----------------------"
+(Get-SysInfo | Out-String).Trim()
+Write-Output "
+
+"
+
+Write-Output "Processor"
+Write-Output "----------------------"
+(Get-ProcessorInfo | Out-String).Trim()
+Write-Output "
+
+"
+
+Write-Output "Memory"
+Write-Output "----------------------"
+(Get-RAM | Out-String).Trim()
+Write-Output "
+
+"
+
+Write-Output "Physical Disk Drives"
+Write-Output "----------------------"
+(Get-Summary | Out-String).Trim()
+Write-Output "
+
+"
+
+Write-Output "Network Adapter"
+Write-Output "----------------------"
+(Get-IPConfig | Out-String).Trim()
+Write-Output "
+
+"
+
+Write-Output "Video Card"
+Write-Output "----------------------"
+(Get-VideoCard | Out-String).Trim()
+Write-Output ""
